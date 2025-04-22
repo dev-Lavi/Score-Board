@@ -1,0 +1,43 @@
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import helmet from 'helmet'; 
+import rateLimit from 'express-rate-limit'; 
+
+import connectDB from './config/mongodb.js'; 
+import quizRoutes from './routes/answerRoute.js';
+
+dotenv.config();
+
+const app = express();
+
+app.set('trust proxy', 1); 
+
+
+app.use(helmet()); 
+app.use(cors()); 
+app.use(express.json()); 
+
+
+const limiter = rateLimit({
+  windowMs: 2 * 60 * 1000, 
+  max: 10, 
+  message: 'Too many requests from this IP, please try again after a while.'
+});
+app.use(limiter);
+
+
+connectDB()
+  .then(() => {
+
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  })
+  .catch((err) => {
+    console.error('Error connecting to the database:', err);
+    process.exit(1); 
+  });
+
+
+app.use('/api/quiz', quizRoutes);
